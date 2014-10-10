@@ -1,0 +1,39 @@
+﻿<div id="body">
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>KGSBrowse LAS file displays using C3.</h1>
+                <h2>Displays well logs.</h2>
+            </hgroup>
+
+            <script type="text/javascript">
+            $(function () {
+                alert('hi there');
+            }) </script>
+
+            // Load d3.js and c3.js
+            <script src="d3.min.js" charset="utf-8"></script>
+            <script src="c3.min.js"></script>
+
+            @* Chart holder for C3JS display *@
+            <div id="chart"></div>
+
+            <script>
+            var chart = c3.generate({
+                bindto: '#chart',
+                size: {
+                    height: 640,
+                    width: 300
+                },
+                data: {
+                       x: depthMnemonic,
+                       json: JSONString
+                },
+                axis: { 'rotated': true },
+                point: { 'show': false }
+
+              });
+            </script>
+        </div>
+    </section>
+</div>
