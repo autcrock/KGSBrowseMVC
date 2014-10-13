@@ -3,7 +3,7 @@ using System.IO;
 using System.Web;
 using System.Web.Mvc;
 using KGSBrowseMVC.Models;
-using Microsoft.Ajax.Utilities;
+//using Microsoft.Ajax.Utilities;
 
 namespace KGSBrowseMVC.Controllers
 {
@@ -28,7 +28,7 @@ namespace KGSBrowseMVC.Controllers
                 var fileName = Path.GetFileName(file.FileName);
 
                 // Empty file name
-                if (fileName.IsNullOrWhiteSpace()) return View(new Model (lasFileName + " Upload error: The file name received by the server was null or white space."));
+                if (string.IsNullOrWhiteSpace(fileName)) return View(new Model (lasFileName + " Upload error: The file name received by the server was null or white space."));
                 
                 // No .las file extension.  Could check the file by parsing it but that is beyond the scope of this story. 
                 var extension = Path.GetExtension(lasFileName).ToLowerInvariant();
