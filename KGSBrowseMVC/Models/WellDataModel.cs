@@ -1,143 +1,167 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace KGSBrowseMVC.Models
 {
-    public class Model
-    {
-        public string ReturnedValue;
-
-        public Model()
-        {
-            ReturnedValue = "Empty Model";
-        }
-        public Model( string message)
-        {
-            ReturnedValue = message;
-        }
-    }
-
     // A well log internal representation holding metadata in the header member
     // and the log data in the data member.
     public class Well
     {
-        public LogHeader Header;
-        public LogData Data;
-        public string JsonHolder { set; get;}
+        public WellHeaderSegments Header { get; set; }
+
+        public LogData Data { get; set; }
+
+        public string JsonHolder { get; set; }
 
         public Well()
         {
-            Header = new LogHeader();
+            Header = new WellHeaderSegments();
             Data = new LogData();
             JsonHolder = "";
         }
-        public Well(LogHeader header, LogData data)
+        public Well(WellHeaderSegments header, LogData data)
         {
             Header = header;
             Data = data;
             JsonHolder = "";
         }
-        // Load and parse a LAS file, which only contains numerical well logs.
-        // Go the quick and dirty suck it all into memory and string split approach.
-        // No error handling.
-        // Untested for LAS 3.x files or for contractor specific non-standard variations.
-
-        public Well(string filename)
+        /// <summary>
+        /// Load and parse a LAS file, which only contains numerical well logs.
+        /// Go the quick and dirty suck it all into memory and string split approach.
+        /// No error handling.
+        /// Untested for LAS 3.x files or for contractor specific non-standard variations.
+        /// </summary>
+        /// <param name="sr">The streamreader</param>
+        public Well(StreamReader sr)
         {
             var headerSegments = new List<LogHeaderSegment>();
-            var resultHeader = new LogHeader();
-            var stringData = new List<LogStringDatum>();
+            var resultHeader = new WellHeaderSegments();
             var resultData = new LogData();
             var logCount = 0;
 
-            var fs = File.OpenRead(filename);
-            var sr = new StreamReader(fs);
-
             // The segments of a LAS file are separated by a tilde.
             // Each type of segment has a label.
+            // Start at 1, not 0 index as the because first list segment is empty
             var data = sr.ReadToEnd();
-            var segments = data.Split('~');
-
-            for (var i = 1; i < segments.Length; i++)
+            var segments = data.Split('~').ToList();
+            segments = segments.GetRange(1, segments.Count-1);
+            foreach (var segment in segments)
             {
                 // Preserve the header meta data as strings as the most likely way it will be useful.
-                LogHeaderSegment segment;
-                switch (segments[i][0])
+                switch (segment[0])
                 {
                     case 'A':
                         // The ASCII log data.
                         if (logCount > 0)
-                            // Silently bypass if the compulsory log data segment is out of order.
+                        // Silently bypass if the compulsory log data segment is out of order.
                         {
-                            resultData = new LogData(logCount, segments[i]);
+                            resultData = new LogData(logCount, segment);
                         }
                         break;
 
                     case 'O':
                         // The Other segment - non-delimited text format - stored as a string.
-                        segment = new LogHeaderSegment(segments[i], true);
+                        // var logOHeaderSegment = new LogHeaderSegment(segment, true);
                         break;
                     case 'C':
                         // The Curve names, units, API code, description.
                         // Delimited by '.' and ':' and parsed as one LogDataQuadruple per line
-                        segment = new LogHeaderSegment(segments[i], false);
-                        headerSegments.Add(segment);
-                        logCount = segment.Data.Count;
+                        var newCHeaderSegment = new LogHeaderSegment(segment, false);
+                        headerSegments.Add(newCHeaderSegment);
+                        logCount = newCHeaderSegment.Data.Count;
                         break;
                     default:
                         // The Version, Parameter and Well information blocks.
                         // Delimited by '.' and ':' and parsed as one LogDataQuadruple per line
-                        segment = new LogHeaderSegment(segments[i], false);
-                        headerSegments.Add(segment);
+                        var newDefaultHeaderSegment = new LogHeaderSegment(segment, false);
+                        headerSegments.Add(newDefaultHeaderSegment);
                         break;
                 }
             }
             resultHeader.Segments = headerSegments;
-            sr.Close();
-            fs.Close();
-
             Header = resultHeader;
             Data = resultData;
             JsonHolder = "";
         }
 
-        // Do this rather than a serialisation library so we can choose to thin data for the display
         public string WellToJson(int maxlogs, int thin)
         {
-            string jsonString = "{" + Environment.NewLine;
+            string jSonString = "{" + Environment.NewLine;
             int curveInfoIndex = 0;
-            while (Header.Segments[curveInfoIndex].Name[0] != 'C')
-            {
-                curveInfoIndex++;
-            }
+            while (Header.Segments[curveInfoIndex].Name[0] != 'C') curveInfoIndex++;
 
             // Thin the data out, ensuring the thinning inputs are sensible
             if (Data.SampleCount < thin) thin = Data.SampleCount;
             if (maxlogs > Data.LogCount) maxlogs = Data.LogCount;
             int maxsamples = Data.SampleCount - Data.SampleCount % thin;
-            for (var i = 0; i < maxlogs; i++)
+            for (int i = 0; i < maxlogs; i++)
             {
-                jsonString += "'" + Header.Segments[curveInfoIndex].Data[i].Mnemonic + "': [";
-                for (var j = 0; j < maxsamples; j += thin)
+                jSonString += "'" + Header.Segments[curveInfoIndex].Data[i].Mnemonic + "': [";
+                for (int j = 0; j < maxsamples; j += thin)
                 {
                     if (j == maxsamples - thin)
                     {
-                        jsonString += Data.DoubleData[i][j];
+                        jSonString += Data.DoubleData[i][j];
                     }
                     else
                     {
-                        jsonString += Data.DoubleData[i][j] + ", ";
+                        jSonString += Data.DoubleData[i][j] + ", ";
                     }
                 }
                 if (i == maxlogs - 1)
-                    jsonString += "]" + Environment.NewLine + Environment.NewLine;
+                    jSonString += "]" + Environment.NewLine + Environment.NewLine;
                 else
-                    jsonString += "]," + Environment.NewLine + Environment.NewLine;
+                    jSonString += "]," + Environment.NewLine + Environment.NewLine;
             }
-            jsonString += "}" + Environment.NewLine;
-            return jsonString;
+            jSonString += "}" + Environment.NewLine;
+            return jSonString;
+        }
+
+        // Do this rather than a serialisation library so we can choose to thin data for the display
+        public LinearDoubleWell WellToLinearDoubleWell()
+        {
+            const Int64 depthInfoIndex = 0;
+            var depths = Data.DoubleData[depthInfoIndex];
+
+
+            var curveInfoIndex = 0;
+
+            // Find Curves segment.
+            while (Header.Segments[curveInfoIndex].Name[0] != 'C') curveInfoIndex++;
+
+
+            // Get the Depth Mnemonic string (varies from contractor to contractor)
+            // var depthString = Header.Segments[curveInfoIndex].Data[depthIndex].Mnemonic;
+            var curves = Header.Segments[curveInfoIndex];
+            var logs = new LinearDoubleLog[Data.SampleCount];
+            var i = 0;
+            foreach (var log in Data.DoubleData)
+            {
+                logs[i] = new LinearDoubleLog(curves.Data[i].Mnemonic, Data.SampleCount);
+
+                //logs[i].SetMnemonic(curves.Data[i].Mnemonic);
+                //logs[i].SetSampleCount(Data.SampleCount);
+
+                var j = 0;
+                foreach (var datum in log)
+                {
+                    logs[i].SetDatumDepthPair(j, depths[j], datum);
+                    j++;
+                }
+                i++;
+            }
+            
+            return new LinearDoubleWell(logs);
+
+        }
+        // Do this rather than a serialisation library so we can choose to thin data for the display
+        public string LinearWellToLinearJsonWell(LinearDoubleWell well)
+        {
+            
+            return "";
         }
 
         public string GetDepths(int thin)
@@ -178,18 +202,24 @@ namespace KGSBrowseMVC.Models
     }
 
     // A LAS Log has a header describing metadata and data layout and meaning.
-    public class LogHeader
+    public class WellHeaderSegments
     {
-        public List<LogHeaderSegment> Segments;
-        public LogHeader()
+        private List<LogHeaderSegment> _segments;
+
+        public List<LogHeaderSegment> Segments
+        {
+            get { return _segments; }
+            set { _segments = value; }
+        }
+
+        public WellHeaderSegments()
         {
             Segments = new List<LogHeaderSegment>();
         }
-        public LogHeader(List<LogHeaderSegment> insegments)
+        public WellHeaderSegments(List<LogHeaderSegment> insegments)
         {
             Segments = insegments;
         }
-
     }
 
     // A LAS Log has a data section containing well log data in arbitrary quantity,
@@ -197,10 +227,29 @@ namespace KGSBrowseMVC.Models
     // This implementation assumes no string logs for the time being.
     public class LogData
     {
-        public int LogCount;
-        public int SampleCount;
-        public double[][] DoubleData;
-        public LogStringDatum[][] StringData;
+        private int _logCount;
+        private int _sampleCount;
+        private double[][] _doubleData;
+
+        public int LogCount
+        {
+            get { return _logCount; }
+            set { _logCount = value; }
+        }
+
+        public int SampleCount
+        {
+            get { return _sampleCount; }
+            set { _sampleCount = value; }
+        }
+
+        public double[][] DoubleData
+        {
+            get { return _doubleData; }
+            set { _doubleData = value; }
+        }
+
+        public LogStringDatum[][] StringData { get; set; }
 
         public LogData()
         {
@@ -218,9 +267,7 @@ namespace KGSBrowseMVC.Models
         }
         public LogData(int lC, string inString)
         {
-            int wordCount = 0;
-
-            if (String.IsNullOrEmpty(inString) )
+            if (String.IsNullOrEmpty(inString))
             {
                 LogCount = 0;
                 SampleCount = 0;
@@ -235,7 +282,7 @@ namespace KGSBrowseMVC.Models
             // Split into words and convert to raw log data
             var words = Regex.Split(inString1, @"\s+");
             LogCount = lC;
-            wordCount = (int)words.Length;
+            var wordCount = words.Length;
             SampleCount = wordCount / LogCount;
             StringData = null;
             DoubleData = new double[LogCount][];
@@ -258,10 +305,34 @@ namespace KGSBrowseMVC.Models
     // A LAS Log header is composed of lines each with at most four items of non-formatting information. 
     public class LogHeaderQuadruple
     {
-        public string Mnemonic;
-        public string Unit;
-        public string Value;
-        public string Name;
+        private string _mnemonic;
+        private string _unit;
+        private string _value;
+        private string _name;
+
+        public string Mnemonic
+        {
+            get { return _mnemonic; }
+            set { _mnemonic = value; }
+        }
+
+        public string Unit
+        {
+            get { return _unit; }
+            set { _unit = value; }
+        }
+
+        public string Value
+        {
+            set { _value = value; }
+            get { return _value; }
+        }
+
+        public string Name
+        {
+            set { _name = value; }
+            get { return _name; }
+        }
 
         public LogHeaderQuadruple(string incoming)
         {
@@ -285,24 +356,41 @@ namespace KGSBrowseMVC.Models
     // Log Headers are named and are composed of segments composed of four items
     public class LogHeaderSegment
     {
-        public string Name;
-        public List<LogHeaderQuadruple> Data;
-        public string OtherInformation;
+        private List<LogHeaderQuadruple> _data;
+        private string _name;
+        private string _otherInformation;
+
+        public string Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
+
+        public List<LogHeaderQuadruple> Data
+        {
+            get { return _data; }
+        }
+
+        public string OtherInformation
+        {
+            get { return _otherInformation; }
+            set { _otherInformation = value; }
+        }
 
         public LogHeaderSegment()
         {
             Name = String.Empty;
-            Data = new List<LogHeaderQuadruple>();
+            _data = new List<LogHeaderQuadruple>();
             OtherInformation = String.Empty;
         }
 
         public LogHeaderSegment(string inString, Boolean other)
         {
             Name = String.Empty;
-            Data = new List<LogHeaderQuadruple>();
+            _data = new List<LogHeaderQuadruple>();
             OtherInformation = String.Empty;
 
-            if ( String.IsNullOrEmpty(inString) )
+            if (String.IsNullOrEmpty(inString))
             {
                 return;
             }
@@ -331,18 +419,30 @@ namespace KGSBrowseMVC.Models
     // For example, it could be a resistivity value.
     public class LogDoubleDatum
     {
-        public double Depth;
-        public double Datum;
+        private double _depth;
+        private double _datum;
+
+        public double Depth
+        {
+            get { return _depth; }
+            set { _depth = value; }
+        }
+
+        public double Datum
+        {
+            get { return _datum; }
+            set { _datum = value; }
+        }
 
         public LogDoubleDatum()
         {
             Depth = 0;
             Datum = 0;
         }
-        public LogDoubleDatum(string inDepth, string inDatum)
+        public LogDoubleDatum(double inDepth, double inDatum)
         {
-            Depth = Convert.ToDouble(inDepth);
-            Datum = Convert.ToDouble(inDatum);
+            Depth = inDepth;
+            Datum = inDatum;
         }
     }
 
@@ -350,8 +450,20 @@ namespace KGSBrowseMVC.Models
     // Could be a rock chip logging descriptor for example.
     public class LogStringDatum
     {
-        public double Depth;
-        public string Datum;
+        private double _depth;
+        private string _datum;
+
+        public double Depth
+        {
+            get { return _depth; }
+            set { _depth = value; }
+        }
+
+        public string Datum
+        {
+            get { return _datum; }
+            set { _datum = value; }
+        }
 
         public LogStringDatum()
         {
@@ -365,5 +477,110 @@ namespace KGSBrowseMVC.Models
         }
     }
 
+    public class LogHeader
+    {
+        private string _mnemonic;
 
+        public string Mnemonic
+        {
+            get { return _mnemonic; }
+            set { _mnemonic = value; }
+        }
+
+        public LogHeader()
+        {
+        }
+
+        public LogHeader(string mnemonic)
+        {
+            Mnemonic = mnemonic;
+        }
+    }
+    // For arranging Each well log with its own meta-data
+    // Initially for easy conversion to JSON input to plotting libraries
+    public class LinearDoubleLog : LogHeader
+    {
+        private LogDoubleDatum[] _datumDepthPairs;
+        private long _sampleCount;
+
+        public long SampleCount
+        {
+            get { return _sampleCount; }
+            set { _sampleCount = value; }
+        }
+
+        public LogDoubleDatum[] DatumDepthPairs
+        {
+            get { return _datumDepthPairs; }
+            set { _datumDepthPairs = value; }
+        }
+        public LinearDoubleLog(string mnemonic, Int64 dataCount)
+        {
+            Mnemonic = mnemonic;
+            _datumDepthPairs = new LogDoubleDatum[dataCount];
+            for (var i = 0; i < dataCount; i++)
+            {
+                _datumDepthPairs[i] = new LogDoubleDatum();
+            }
+            SampleCount = _datumDepthPairs.LongCount();
+        }
+        public LinearDoubleLog(string mnemonic, LogDoubleDatum[] datumDepthPairs)
+        {
+            Mnemonic = mnemonic;
+            _datumDepthPairs = datumDepthPairs;
+            SampleCount = _datumDepthPairs.LongCount();
+        }
+        public Int64 GetSampleCount()
+        {
+            return SampleCount;
+        }
+        public void SetSampleCount(Int64 sampleCount)
+        {
+            SampleCount = sampleCount;
+        }
+
+        public void SetDatumDepthPair(Int64 i, double depth, double measurement)
+        {
+            _datumDepthPairs[i].Depth = depth;
+            _datumDepthPairs[i].Datum = measurement;
+        }
+        public LogDoubleDatum GetDatumDepthPair(Int64 i)
+        {
+            return new LogDoubleDatum( _datumDepthPairs[i].Depth, _datumDepthPairs[i].Datum);
+        }
+
+        public void SetMnemonic(string mnemonic)
+        {
+            Mnemonic = mnemonic;
+        }
+        public string GetMnemonic()
+        {
+            return Mnemonic;
+        }
+    }
+
+    public class LinearDoubleWell
+    {
+        private LinearDoubleLog[] _linearStringLogs;
+        private long _logCount;
+
+        private LinearDoubleLog[] LinearStringLogs
+        {
+            get { return _linearStringLogs; }
+            set { _linearStringLogs = value; }
+        }
+
+        private Int64 LogCount
+        {
+            get { return _logCount; }
+            set { _logCount = value; }
+        }
+
+        public LinearDoubleWell ( LinearDoubleLog[] linearStringLogs)
+        {
+            LinearStringLogs = linearStringLogs;
+            LogCount = LinearStringLogs.LongCount();
+        }
+
+    }
 }

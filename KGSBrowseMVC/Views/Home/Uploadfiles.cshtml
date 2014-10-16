@@ -8,63 +8,54 @@
             </hgroup>
             <h2>Displays well logs.</h2>
 
-
-            @*<div>
-                <span>Viewdata = </span>   @ViewData["text"]
-            </div>
-            <div>
-                <span>Model text = </span> @Model.TheText
-            </div>*@
-
-            @*<link href="well.css" rel="stylesheet" type="text/css">*@
-
-            <link href="c3.css" rel="stylesheet" type="text/css">
-            <script> src = "d3.js" </script>
-            <script> src = "c3.js" </script>
-            
-            <div id="chart"></div>
-
-            <script type="text/javascript">
-                var chart = c3.generate({
-                    bindto: '#chart',
-                    data: {
-                        columns: [
-                        ['data1', 30, 200, 100, 400, 150, 250],
-                        ['data2', 50, 20, 10, 40, 15, 25]
-                        ]
-                    }
-                });
-            </script>
-
             <h1>JSON data from server plotted by C3JS (D3JS wrapper).</h1>
-
 
             <h1>JSON data from server.</h1>
 
-            @* Chart holder for C3JS display *@
-            <span>Model text = </span> @Model.ReturnedValue
+            @*            <span>Model text = </span> @Model.ReturnedValue*@
+            <link href="well.css" rel="stylesheet" type="text/css">
+            <script src="/Scripts/jquery-1.8.2.js"></script>
 
-            
+            <link href="c3.css" rel="stylesheet" type="text/css">
+            <script src="d3.js" charset="utf-8"> </script>
+            <script src="c3.js"> </script>
 
-    @*<script type="text/javascript">
+            <script charset="utf-8" type="text/javascript">
+                var depthMnemonic = "DEPT";
+                var jSonString = @Html.Raw(Model.ReturnedValue);
+                var chart = c3.generate({
+                    bindto: "#chart",
+                    size: {
+                        height: 640,
+                        width: 300
+                    },
+                    data: {
+                        x: depthMnemonic,
+                        json: jSonString
+                    },
+                    axis: { "rotated": true },
+                    point: { "show": false }
+                });
 
-                    var depthMnemonic = "DEPT";
-                    var jSonString = "@Model.ReturnedValue";
-                    var chart = c3.generate({
-                            bindto: "#chart",
-                            size: {
-                                height: 640,
-                                width: 300
-                            },
-                            data: {
-                                x: depthMnemonic,
-                                json: jSonString
-                            },
-                            axis: { "rotated": true },
-                            point: { "show": false }
-                        });
-
-            </script>*@
-    </div>
-</section>
+            </script>
+        </div>
+    </section>
 </div>
+
+<script src="/Scripts/jquery-1.8.2.js"></script>
+
+@* Chart holder for C3JS display
+@*<div> <span id="chart"></span></div>
+
+<script charset="utf-8" type="text/javascript">
+    var chart = c3.generate({
+        bindto: "#chart",
+        data: {
+            columns: [
+            ["data1", 30, 200, 100, 400, 150, 250],
+            ["data2", 50, 20, 10, 40, 15, 25]
+            ]
+        }
+    });
+</script>*@
+
