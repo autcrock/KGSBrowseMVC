@@ -34,10 +34,13 @@ namespace KGSBrowseMVC.Controllers
                     var well = new Well(sr);
                     var ldw = well.WellToLinearDoubleWell();
                     var serialisedLdw = JsonConvert.SerializeObject(ldw);
+#if false
 //                    var model = new Model(well.WellToJson(40, 13));
-
 //                    return View( model );
-                    return View(new Model(serialisedLdw));
+#else
+                    var model = new Model(serialisedLdw);
+                    return View(model);
+#endif
                 }
             }
 

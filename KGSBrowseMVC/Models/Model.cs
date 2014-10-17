@@ -2,7 +2,13 @@ namespace KGSBrowseMVC.Models
 {
     public class Model
     {
-        private string ReturnedValue { set; get; }
+        private string _returnedValue;
+
+        private string ReturnedValue
+        {
+            set { _returnedValue = value; }
+            get { return _returnedValue; }
+        }
 
         public Model()
         {
