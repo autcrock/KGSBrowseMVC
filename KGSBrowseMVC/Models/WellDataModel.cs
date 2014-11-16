@@ -136,7 +136,7 @@ namespace KGSBrowseMVC.Models
             // Get the Depth Mnemonic string (varies from contractor to contractor)
             // var depthString = Header.Segments[curveInfoIndex].Data[depthIndex].Mnemonic;
             var curves = Header.Segments[curveInfoIndex];
-            var logs = new LinearDoubleLog[Data.SampleCount];
+            var logs = new LinearDoubleLog[Data.LogCount];
             var i = 0;
             foreach (var log in Data.DoubleData)
             {
