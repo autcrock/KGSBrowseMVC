@@ -24,7 +24,7 @@ namespace KGSBrowseMVC.Tests
         [Fact]
         public void CanSerialiseLinearDoubleLog()
         {
-            var sut = new LinearDoubleLog("Abc",);
+            var sut = new LinearDoubleLog("Abc",5);
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(sut);
             Assert.Contains("Abc", json);
         }
