@@ -21,7 +21,7 @@
 
             <script charset="utf-8" type="text/javascript">
                 var depthMnemonic = "DEPT";
-                var jSonString = @Html.Raw(Model.ReturnedValue);
+                var jSonString = @Html.Raw(Model);
                 var chart = c3.generate({
                     bindto: "#chart",
                     size: {

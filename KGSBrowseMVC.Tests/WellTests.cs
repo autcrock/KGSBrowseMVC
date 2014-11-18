@@ -26,15 +26,12 @@ namespace KGSBrowseMVC.Tests
         [Fact]
         public void CanSerialiseLinearDoubleLog()
         {
-<<<<<<< HEAD
-            var sut = new LinearDoubleLog("Abc",5);
-=======
+//            var sut = new LinearDoubleLog("Abc",5);
             var datum1 = new LogDoubleDatum ( 1.0, 2.0 );
             var datum2 = new LogDoubleDatum( -3.0, 0.4 );
             var datum3 = new LogDoubleDatum( 5.0, 6.123456 );
             LogDoubleDatum [] data = { datum1, datum2, datum3};
             var sut = new LinearDoubleLog("tester", data);
->>>>>>> 99319d69dc6b86f7da733dc8168d435487523d05
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(sut);
             Assert.Contains( 
                 "{\"SampleCount\":3,\"DatumDepthPairs\":[{\"Depth\":1.0,\"Datum\":2.0},{\"Depth\":-3.0,\"Datum\":0.4},{\"Depth\":5.0,\"Datum\":6.123456}],\"Mnemonic\":\"tester\"}",
