@@ -253,12 +253,15 @@
     <Content Include="Scripts\knockout-2.2.0.debug.js" />
     <Content Include="Scripts\knockout-2.2.0.js" />
     <Content Include="Scripts\modernizr-2.6.2.js" />
-    <Content Include="Views\Home\c3.css" />
-    <Content Include="Views\Home\c3.js" />
-    <Content Include="Views\Home\c3.min.js" />
-    <Content Include="Views\Home\d3.js" />
-    <Content Include="Views\Home\d3.min.js" />
-    <Content Include="Views\Home\well.css" />
+    <Content Include="Views\Home\bower.json" />
+    <Content Include="Views\Home\component.json" />
+    <Content Include="Views\Home\Old C3\c3.css" />
+    <Content Include="Views\Home\Old C3\c3.js" />
+    <Content Include="Views\Home\Old C3\c3.min.js" />
+    <Content Include="Views\Home\Old C3\d3.js" />
+    <Content Include="Views\Home\Old C3\d3.min.js" />
+    <Content Include="Views\Home\Old C3\well.css" />
+    <Content Include="Views\Home\package.json" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -282,12 +285,19 @@
     <Content Include="Images\orderedList8.png" />
     <Content Include="Images\orderedList9.png" />
     <Content Include="Scripts\_references.js" />
-    <Content Include="Views\Web.config" />
-    <Content Include="Views\_ViewStart.cshtml" />
+    <Content Include="Views\Old C3\Web.config" />
+    <Content Include="Views\Old C3\_ViewStart.cshtml" />
+    <Content Include="Views\Home\Old C3\Index.cshtml" />
+    <Content Include="Views\Shared\Old C3\Error.cshtml" />
+    <Content Include="Views\Shared\Old C3\_Layout.cshtml" />
+    <Content Include="Views\Home\Old C3\Uploadfiles.cshtml" />
+    <Content Include="Views\Home\data.tsv" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\Uploadfiles.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="Views\Home\Uploadfiles.cshtml" />
+    <Content Include="Views\Web.config" />
+    <Content Include="Views\_ViewStart.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
